@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Find project folder
+        run: echo "PROJ=$(dirname "$(find . -name settings.gradle.kts -not -path './.git/*' | head -1)")" >> $GITHUB_ENV
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -19,13 +21,15 @@ jobs:
       - name: Accept Android licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - name: Download MediaPipe hand model
+        working-directory: ${{ env.PROJ }}
         run: |
           mkdir -p app/src/main/assets
           curl -L -o app/src/main/assets/hand_landmarker.task \
             https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
       - name: Build debug APK
+        working-directory: ${{ env.PROJ }}
         run: gradle assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
           name: AR-Ball-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJ }}/app/build/outputs/apk/debug/app-debug.apk
